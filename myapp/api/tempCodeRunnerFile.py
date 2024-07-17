@@ -1,0 +1,1 @@
+SELECT start FROM episodes WHERE name LIKE "Ruffy Enters the Fray!"
