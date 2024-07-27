@@ -22,6 +22,7 @@ import google.generativeai as genai
 from sqlalchemy import create_engine
 import pandas as pd
 from langchain_community.utilities import SQLDatabase
+import mysql.connector
 
 GOOGLE_API_KEY = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
 os.environ["GOOGLE_API_KEY"] = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
@@ -324,3 +325,267 @@ def generate_prompt(schema_info):
         prompt += f"The SQL database has the table named '{table}' which has the columns: {', '.join(columns)}.\n"
     prompt += "Generate only SQL queries and nothing else."
     return prompt
+
+
+from langchain.schema import Document
+import requests
+import mysql.connector
+import pymysql
+
+
+# class ChatWithDBCJ(APIView):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.db_config = {
+#             "user": "root",
+#             "password": "root",
+#             "host": "localhost",
+#             "database": "anime_db",
+#         }
+
+#     def connect_db(self):
+#         self.conn = pymysql.connect(**self.db_config)
+#         self.cursor = self.conn.cursor()
+
+#     def close_db(self):
+#         self.cursor.close()
+#         self.conn.close()
+
+#     def format_row(self, row, column_names):
+#         return ", ".join(f"{col}={val}" for col, val in zip(column_names, row))
+
+#     def get_embedding(self, content, i):
+#         response = genai.embed_content(
+#             model="models/text-embedding-004",
+#             content=content,
+#             task_type="retrieval_document",
+#             title=f"Embedding of row: {i}",
+#         )
+#         return response["embedding"]
+
+#     def generate_embeddings(self, rows, column_names):
+#         row_embeddings = []
+#         for i, row in enumerate(rows):
+#             formatted_row = self.format_row(row, column_names)
+#             if len(formatted_row.split()) <= 2048:
+#                 embedding = self.get_embedding(formatted_row, i)
+#                 row_embeddings.append((row, embedding))
+#             else:
+#                 print("Exceeded token size")
+#         return row_embeddings
+
+#     def convert_to_documents(self, rows, column_names):
+#         text_splitter = CharacterTextSplitter(
+#             separator=".",
+#             chunk_size=250,
+#             chunk_overlap=50,
+#             length_function=len,
+#             is_separator_regex=False,
+#         )
+
+#         documents = []
+#         for i, row in enumerate(rows):
+#             formatted_row = self.format_row(row, column_names)
+#             chunks = text_splitter.split_text(formatted_row)
+#             for chunk in chunks:
+#                 documents.append(
+#                     Document(page_content=chunk, metadata={"id": f"row_{i}"})
+#                 )
+#         return documents
+
+#     def send_message(self, message="code has ran"):
+#         api_url = "https://api.pushover.net/1/messages.json"
+#         api_token = "avmodo3phfx3j4drgjoycsrpb9wmx6"  # Replace with your application's API token
+#         user_key = "ungwjkqedrmvx664rvq5qb8ip1her7"  # Replace with your user key
+#         title = "Test Notification"
+#         device = "pixel6a"  # Optional: Specify the device name if you want to send to a specific device
+
+#         data = {
+#             "token": api_token,
+#             "user": user_key,
+#             "message": message,
+#             "title": title,
+#             "device": device,
+#         }
+
+#         response = requests.post(api_url, data=data)
+
+#         if response.status_code == 200:
+#             print("Notification sent successfully!")
+#         else:
+#             print(f"Failed to send notification. Status code: {response.status_code}")
+#             print(response.text)
+
+#     def post(self, request, *args, **kwargs):
+#         self.connect_db()
+#         self.cursor.execute("SELECT * FROM episodes")
+#         rows = self.cursor.fetchall()
+#         column_names = [desc[0] for desc in self.cursor.description]
+
+#         row_embeddings = self.generate_embeddings(rows, column_names)
+#         documents = self.convert_to_documents(rows, column_names)
+
+#         llm = ChatGoogleGenerativeAI(model="gemini-pro")
+#         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+#         vectordb = Chroma.from_documents(documents, embeddings)
+#         retriever = vectordb.as_retriever(search_kwargs={"k": 5})
+
+#         template = """
+#         You are a helpful AI assistant.
+#         Provide a natural language answer based on the context provided.
+#         Context: {context}
+#         Input: {input}
+#         Answer:
+#         """
+#         prompt = PromptTemplate.from_template(template)
+#         combine_docs_chain = create_stuff_documents_chain(llm, prompt)
+#         retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
+
+#         query = request.data.get(
+#             "query", "Which season, episode was Luffy first introduced?"
+#         )
+#         response = retrieval_chain.invoke({"input": query})
+#         ChatWithDBCJ.send_message()
+#         self.close_db()
+
+#         return Response({"message": response["answer"]}, status=status.HTTP_200_OK)
+
+import json
+
+
+class ChatWithDBCJ(APIView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.GOOGLE_API_KEY = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
+        os.environ["GOOGLE_API_KEY"] = self.GOOGLE_API_KEY
+        genai.configure(api_key=self.GOOGLE_API_KEY)
+        self.db_config = {
+            "user": "root",
+            "password": "root",
+            "host": "localhost",
+            "database": "anime_db",
+        }
+        self.embedding_file = "embeddings.json"
+        self.embeddings = self.load_embeddings()
+
+    def load_embeddings(self):
+        if os.path.exists(self.embedding_file):
+            with open(self.embedding_file, "r") as f:
+                return json.load(f)
+        return {}
+
+    def save_embeddings(self):
+        with open(self.embedding_file, "w") as f:
+            json.dump(self.embeddings, f)
+
+    def connect_db(self):
+        self.conn = pymysql.connect(**self.db_config)
+        self.cursor = self.conn.cursor()
+
+    def close_db(self):
+        self.cursor.close()
+        self.conn.close()
+
+    def format_row(self, row, column_names):
+        return ", ".join(f"{col}={val}" for col, val in zip(column_names, row))
+
+    def get_embedding(self, content, i):
+        if content in self.embeddings:
+            return self.embeddings[content]
+        response = genai.embed_content(
+            model="models/text-embedding-004",
+            content=content,
+            task_type="retrieval_document",
+            title=f"Embedding of row: {i}",
+        )
+        embedding = response["embedding"]
+        self.embeddings[content] = embedding
+        return embedding
+
+    def generate_embeddings(self, rows, column_names):
+        row_embeddings = []
+        for i, row in enumerate(rows):
+            formatted_row = self.format_row(row, column_names)
+            if len(formatted_row.split()) <= 2048:
+                embedding = self.get_embedding(formatted_row, i)
+                row_embeddings.append((row, embedding))
+            else:
+                print("Exceeded token size")
+        self.save_embeddings()
+        return row_embeddings
+
+    def convert_to_documents(self, rows, column_names):
+        text_splitter = CharacterTextSplitter(
+            separator=".",
+            chunk_size=250,
+            chunk_overlap=50,
+            length_function=len,
+            is_separator_regex=False,
+        )
+
+        documents = []
+        for i, row in enumerate(rows):
+            formatted_row = self.format_row(row, column_names)
+            chunks = text_splitter.split_text(formatted_row)
+            for chunk in chunks:
+                documents.append(
+                    Document(page_content=chunk, metadata={"id": f"row_{i}"})
+                )
+        return documents
+
+    def send_message(self, message="code has ran"):
+        api_url = "https://api.pushover.net/1/messages.json"
+        api_token = "avmodo3phfx3j4drgjoycsrpb9wmx6"  # Replace with your application's API token
+        user_key = "ungwjkqedrmvx664rvq5qb8ip1her7"  # Replace with your user key
+        title = "Test Notification"
+        device = "pixel6a"  # Optional: Specify the device name if you want to send to a specific device
+
+        data = {
+            "token": api_token,
+            "user": user_key,
+            "message": message,
+            "title": title,
+            "device": device,
+        }
+
+        response = requests.post(api_url, data=data)
+
+        if response.status_code == 200:
+            print("Notification sent successfully!")
+        else:
+            print(f"Failed to send notification. Status code: {response.status_code}")
+            print(response.text)
+
+    def post(self, request, *args, **kwargs):
+        self.connect_db()
+        self.cursor.execute("SELECT * FROM episodes")
+        rows = self.cursor.fetchall()
+        column_names = [desc[0] for desc in self.cursor.description]
+
+        row_embeddings = self.generate_embeddings(rows, column_names)
+        documents = self.convert_to_documents(rows, column_names)
+
+        llm = ChatGoogleGenerativeAI(model="gemini-pro")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        vectordb = Chroma.from_documents(documents, embeddings)
+        retriever = vectordb.as_retriever(search_kwargs={"k": 5})
+
+        template = """
+        You are a helpful AI assistant.
+        Provide a natural language answer based on the context provided.
+        Context: {context}
+        Input: {input}
+        Answer:
+        """
+        prompt = PromptTemplate.from_template(template)
+        combine_docs_chain = create_stuff_documents_chain(llm, prompt)
+        retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
+
+        query = request.data.get(
+            "query", "Which season, episode was Luffy first introduced?"
+        )
+        response = retrieval_chain.invoke({"input": query})
+
+        self.close_db()
+
+        return Response({"message": response["answer"]}, status=status.HTTP_200_OK)
