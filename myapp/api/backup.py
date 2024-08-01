@@ -11,7 +11,7 @@ from langchain.vectorstores import Chroma
 import os
 
 # Set the environment variable
-os.environ["GOOGLE_API_KEY"] = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
+os.environ["GOOGLE_API_KEY"] = "aIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ09"
 
 # Your other code goes here
 
