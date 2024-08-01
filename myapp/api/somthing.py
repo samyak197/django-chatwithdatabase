@@ -9,7 +9,7 @@ from langchain_community.utilities import SQLDatabase
 load_dotenv()
 
 # Set your Google API key
-GOOGLE_API_KEY = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
+GOOGLE_API_KEY = "aIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ09"
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 genai.configure(api_key=GOOGLE_API_KEY)
 
