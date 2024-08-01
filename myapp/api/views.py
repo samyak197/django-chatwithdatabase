@@ -26,8 +26,8 @@ from langchain_community.utilities import SQLDatabase
 # import mysql.connector
 from django.views.decorators.csrf import csrf_exempt
 
-GOOGLE_API_KEY = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
-os.environ["GOOGLE_API_KEY"] = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
+GOOGLE_API_KEY = "aIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ09"
+os.environ["GOOGLE_API_KEY"] = "IzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ09"
 genai.configure(api_key=GOOGLE_API_KEY)
 
 
@@ -347,7 +347,7 @@ import json
 # class ChatWithDBCJ(APIView):
 #     def __init__(self, *args, **kwargs):
 #         super().__init__(*args, **kwargs)
-#         self.GOOGLE_API_KEY = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
+#         self.GOOGLE_API_KEY = "aIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ0909"
 #         os.environ["GOOGLE_API_KEY"] = self.GOOGLE_API_KEY
 #         genai.configure(api_key=self.GOOGLE_API_KEY)
 #         self.db_config = {
@@ -532,7 +532,7 @@ import json
 # class ChatWithDBCJ(APIView):
 #     def __init__(self, *args, **kwargs):
 #         super().__init__(*args, **kwargs)
-#         self.GOOGLE_API_KEY = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
+#         self.GOOGLE_API_KEY = "aIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ09"
 #         os.environ["GOOGLE_API_KEY"] = self.GOOGLE_API_KEY
 #         genai.configure(api_key=self.GOOGLE_API_KEY)
 #         self.db_config = {
@@ -705,7 +705,7 @@ logger = logging.getLogger(__name__)
 class ChatWithDBCJ(APIView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.GOOGLE_API_KEY = "AIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ"
+        self.GOOGLE_API_KEY = "aIzaSyB5XLKf8Kg5uYk1EBMjjPVzk4G99MSCkpQ09"
         os.environ["GOOGLE_API_KEY"] = self.GOOGLE_API_KEY
         genai.configure(api_key=self.GOOGLE_API_KEY)
         self.db_config = {
